@@ -19,48 +19,68 @@ public class CinemaAppUI {
     private static void createAndShowGUI() {
         JFrame frame = new JFrame("Cinema Reservation System");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(400, 300);
-        frame.setLayout(new GridLayout(6, 1, 5, 5));
+        frame.setSize(600, 400);
+        frame.setLayout(new BorderLayout());
+
+        // Center the JFrame on the screen
+        frame.setLocationRelativeTo(null); 
 
         JLabel titleLabel = new JLabel("Cinema Reservation System", JLabel.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        frame.add(titleLabel);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        titleLabel.setForeground(Color.BLUE);
+        frame.add(titleLabel, BorderLayout.NORTH);
+
+        // Create a panel for buttons with a horizontal layout
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10)); // Centered with spacing
 
         JButton viewMoviesButton = new JButton("View Movies");
         JButton addBookingButton = new JButton("Add Booking");
-        JButton cancelBookingButton = new JButton("Cancel Booking");
         JButton viewBookingsButton = new JButton("View Bookings");
+        JButton cancelBookingButton = new JButton("Cancel Booking");
         JButton exitButton = new JButton("Exit");
 
-        frame.add(viewMoviesButton);
-        frame.add(addBookingButton);
-        frame.add(cancelBookingButton);
-        frame.add(viewBookingsButton);
-        frame.add(exitButton);
+        // Set button sizes for better visibility
+        Dimension buttonSize = new Dimension(120, 40);
+        viewMoviesButton.setPreferredSize(buttonSize);
+        addBookingButton.setPreferredSize(buttonSize);
+        viewBookingsButton.setPreferredSize(buttonSize);
+        cancelBookingButton.setPreferredSize(buttonSize);
+        exitButton.setPreferredSize(buttonSize);
+
+        buttonPanel.add(viewMoviesButton);
+        buttonPanel.add(addBookingButton);
+        buttonPanel.add(viewBookingsButton);
+        buttonPanel.add(cancelBookingButton);
+        buttonPanel.add(exitButton);
+
+        frame.add(buttonPanel, BorderLayout.CENTER);
 
         // Button actions
-        viewMoviesButton.addActionListener(e -> showViewMoviesDialog(frame));
+        viewMoviesButton.addActionListener(e -> showMoviesDialog(frame));
         addBookingButton.addActionListener(e -> showAddBookingDialog(frame));
-        cancelBookingButton.addActionListener(e -> showCancelBookingDialog(frame));
         viewBookingsButton.addActionListener(e -> showBookingsDialog(frame));
+        cancelBookingButton.addActionListener(e -> showCancelBookingDialog(frame));
         exitButton.addActionListener(e -> System.exit(0));
 
         frame.setVisible(true);
     }
 
-    private static void showViewMoviesDialog(JFrame parent) {
+    private static void showMoviesDialog(JFrame parent) {
         JDialog dialog = new JDialog(parent, "Available Movies", true);
-        dialog.setSize(400, 300);
+        dialog.setSize(500, 400);
 
         JTextArea moviesArea = new JTextArea();
         moviesArea.setEditable(false);
+        
+        moviesArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        moviesArea.setBackground(Color.LIGHT_GRAY);
 
         try {
             String sql = "SELECT * FROM Movies";
             Statement statement = connection.createStatement();
             ResultSet resultSet = statement.executeQuery(sql);
-
-            StringBuilder moviesText = new StringBuilder("Available Movies:\n");
+            StringBuilder moviesText = new StringBuilder();
             while (resultSet.next()) {
                 moviesText.append(String.format("%d: %s (%s) - %d min, Released: %s\n",
                         resultSet.getInt("movie_id"),
@@ -75,331 +95,246 @@ public class CinemaAppUI {
         }
 
         dialog.add(new JScrollPane(moviesArea));
+        dialog.setLocationRelativeTo(parent); // Center the dialog relative to parent
         dialog.setVisible(true);
     }
 
     private static void showAddBookingDialog(JFrame parent) {
         JDialog dialog = new JDialog(parent, "Add Booking", true);
-        dialog.setSize(600, 600);  // Adjust size for more information
-        dialog.setLayout(new BorderLayout(10, 10));
+        dialog.setSize(400, 400); // Adjusted size for better fit
 
-        // Display available movies with showtimes and available seats
-        JTextArea moviesArea = new JTextArea();
-        moviesArea.setEditable(false);
-        moviesArea.setBorder(BorderFactory.createTitledBorder("Available Movies and Showtimes"));
+       // Input panel for user data
+       JPanel inputPanel = new JPanel(new GridLayout(6, 2, 5, 5));
 
-        // Create input panel for user data
-        JPanel inputPanel = new JPanel(new GridLayout(6, 2, 5, 5));
-        JLabel nameLabel = new JLabel("Full Name:");
-        JTextField nameField = new JTextField();
-        JLabel phoneLabel = new JLabel("Phone Number:");
-        JTextField phoneField = new JTextField();
-        JLabel movieIdLabel = new JLabel("Movie ID:");
-        JTextField movieIdField = new JTextField();
-        JLabel showtimeLabel = new JLabel("Showtime ID:");
-        JTextField showtimeIdField = new JTextField();  // For automatically filling in Showtime ID
-        JLabel seatsLabel = new JLabel("Seats to Book:");
-        JTextField seatsField = new JTextField();
+       JLabel nameLabel = new JLabel("Full Name:");
+       JTextField nameField = new JTextField();
 
-        inputPanel.add(nameLabel);
-        inputPanel.add(nameField);
-        inputPanel.add(phoneLabel);
-        inputPanel.add(phoneField);
-        inputPanel.add(movieIdLabel);
-        inputPanel.add(movieIdField);
-        inputPanel.add(showtimeLabel);
-        inputPanel.add(showtimeIdField);  // Display Showtime ID (auto-generated)
-        inputPanel.add(seatsLabel);
-        inputPanel.add(seatsField);
+       JLabel phoneLabel = new JLabel("Phone Number:");
+       JTextField phoneField = new JTextField();
 
-        // Add Save and Cancel buttons
-        JPanel buttonPanel = new JPanel();
-        JButton saveButton = new JButton("Save");
-        JButton cancelButton = new JButton("Cancel");
-        buttonPanel.add(saveButton);
-        buttonPanel.add(cancelButton);
+       JLabel movieIdLabel = new JLabel("Movie ID:");
+       JTextField movieIdField = new JTextField();
 
-        // Add components to the dialog
-        dialog.add(new JScrollPane(moviesArea), BorderLayout.NORTH);
-        dialog.add(inputPanel, BorderLayout.CENTER);
-        dialog.add(buttonPanel, BorderLayout.SOUTH);
+       JLabel showtimeIdLabel = new JLabel("Showtime ID:");
+       JTextField showtimeIdField = new JTextField();
 
-        // Populate available movies and showtimes
-        try {
-            String movieQuery = "SELECT m.movie_id, m.title, s.showtime_id, s.show_time, " +
-                                "IFNULL(s.available_seats, 150) AS available_seats " +
-                                "FROM movies m " +
-                                "LEFT JOIN showtimes s ON m.movie_id = s.movie_id " +
-                                "ORDER BY m.movie_id, s.show_time"; // Organize by movie_id and show_time
-            Statement movieStatement = connection.createStatement();
-            ResultSet movieResultSet = movieStatement.executeQuery(movieQuery);
+       JLabel seatsLabel = new JLabel("Seats to Book:");
+       JTextField seatsField = new JTextField();
 
-            StringBuilder moviesText = new StringBuilder();
-            while (movieResultSet.next()) {
-                int movieId = movieResultSet.getInt("movie_id");
-                String title = movieResultSet.getString("title");
-                int showtimeId = movieResultSet.getInt("showtime_id");
-                String showTime = movieResultSet.getString("show_time");
-                int availableSeats = movieResultSet.getInt("available_seats");
+       inputPanel.add(nameLabel);
+       inputPanel.add(nameField);
+       inputPanel.add(phoneLabel);
+       inputPanel.add(phoneField);
+       inputPanel.add(movieIdLabel);
+       inputPanel.add(movieIdField);
 
-                String movieInfo = String.format("Movie ID: %d, Title: %s, Showtime: %s, Available Seats: %d\n",
-                        movieId, title, showTime, availableSeats);
-                moviesText.append(movieInfo);
-            }
-            moviesArea.setText(moviesText.toString());
+       inputPanel.add(showtimeIdLabel);
+       inputPanel.add(showtimeIdField);
 
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(dialog, "Error retrieving movie/showtime information: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
+       inputPanel.add(seatsLabel);
+       inputPanel.add(seatsField);
 
-        // Add save action
-        saveButton.addActionListener(e -> {
-            String fullName = nameField.getText().trim();
-            String phoneNumber = phoneField.getText().trim();
-            String movieIdText = movieIdField.getText().trim();
-            String seatsText = seatsField.getText().trim();
+       // Buttons for Save and Cancel
+       JPanel buttonPanel = new JPanel();
+       
+       JButton saveButton = new JButton("Save");
+       JButton cancelButton = new JButton("Cancel");
+       
+       buttonPanel.add(saveButton);
+       buttonPanel.add(cancelButton);
 
-            // Check for empty fields
-            if (fullName.isEmpty() || phoneNumber.isEmpty() || movieIdText.isEmpty() || seatsText.isEmpty()) {
-                JOptionPane.showMessageDialog(dialog, "All fields must be filled out!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+       dialog.setLayout(new BorderLayout());
+       
+       dialog.add(inputPanel, BorderLayout.CENTER);
+       dialog.add(buttonPanel, BorderLayout.SOUTH);
 
-            // Validate Full Name (only letters and spaces allowed)
-            if (!fullName.matches("[a-zA-Z ]+")) {
-                JOptionPane.showMessageDialog(dialog, "Full name should only contain letters and spaces.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+       // Populate available movies and showtimes
+       try {
+           String movieQuery = "SELECT m.movie_id, m.title, s.showtime_id, s.show_time, " +
+                   "IFNULL(s.available_seats, 150) AS available_seats " +
+                   "FROM Movies m " +
+                   "LEFT JOIN Showtimes s ON m.movie_id = s.movie_id " +
+                   "ORDER BY m.movie_id, s.show_time";
+           Statement movieStatement = connection.createStatement();
+           ResultSet movieResultSet = movieStatement.executeQuery(movieQuery);
 
-            // Validate Phone Number (only digits and optional '+' sign allowed)
-            if (!phoneNumber.matches("[+0-9]+")) {
-                JOptionPane.showMessageDialog(dialog, "Phone number should only contain digits", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+           StringBuilder moviesText = new StringBuilder();
+           while (movieResultSet.next()) {
+               int movieId = movieResultSet.getInt("movie_id");
+               String title = movieResultSet.getString("title");
+               int showtimeId = movieResultSet.getInt("showtime_id");
+               String showTime = movieResultSet.getString("show_time");
+               int availableSeats = movieResultSet.getInt("available_seats");
 
-            // Validate Movie ID (only digits allowed)
-            if (!movieIdText.matches("[0-9]+")) {
-                JOptionPane.showMessageDialog(dialog, "Movie ID should only contain digits.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+               String movieInfo = String.format("Movie ID: %d, Title: %s, Showtime ID: %d, Showtime: %s, Available Seats: %d\n",
+                       movieId, title, showtimeId, showTime, availableSeats);
+               moviesText.append(movieInfo);
+           }
+           // Display available movies in a text area or other component as needed.
+           JTextArea moviesArea = new JTextArea(moviesText.toString());
+           moviesArea.setEditable(false); 
+           dialog.add(new JScrollPane(moviesArea), BorderLayout.NORTH); // Add to dialog
+           
+           // Add action listener to Movie ID field
+           movieIdField.addActionListener(e -> {
+               String selectedMovieIdText = movieIdField.getText().trim();
+               if (!selectedMovieIdText.isEmpty()) {
+                   int selectedMovieId;
+                   try {
+                       selectedMovieId = Integer.parseInt(selectedMovieIdText);
+                       updateShowtimeOptions(selectedMovieId, showtimeIdField); // Update options based on selected Movie ID
+                   } catch (NumberFormatException ex) {
+                       JOptionPane.showMessageDialog(dialog,"Invalid Movie ID. Please enter a number.","Error",JOptionPane.ERROR_MESSAGE); 
+                   }
+               }
+           });
 
-            // Validate Movie ID range (1-5)
-            int movieId = Integer.parseInt(movieIdText);
-            if (movieId < 1 || movieId > 5) {
-                JOptionPane.showMessageDialog(dialog, "Movie ID must be between 1 and 5.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+       } catch (SQLException e) {
+           JOptionPane.showMessageDialog(dialog,"Error retrieving movie/showtime information: "+ e.getMessage(),"Error",JOptionPane.ERROR_MESSAGE); 
+       }
 
-            // The Showtime ID is automatically assigned the same value as the Movie ID
-            String showtimeIdText = String.valueOf(movieId);
-            showtimeIdField.setText(showtimeIdText);
+   // Save button logic
+   saveButton.addActionListener(e -> {
+       String fullName = nameField.getText().trim();
+       String phoneNumber = phoneField.getText().trim();
+       String movieIdText = movieIdField.getText().trim();
+       String showtimeIdText=showtimeIdField.getText().trim(); 
+       String seatsText=seatsField.getText().trim();
 
-            // Validate seats: Should be a positive number
-            if (seatsText.isEmpty() || !seatsText.matches("\\d+") || Integer.parseInt(seatsText) <= 0) {
-                JOptionPane.showMessageDialog(dialog, "Seats to book should be a positive number.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+       if (fullName.isEmpty() || phoneNumber.isEmpty() || movieIdText.isEmpty() || seatsText.isEmpty() || showtimeIdText.isEmpty()) {
+           JOptionPane.showMessageDialog(dialog,"All fields must be filled out!","Error",JOptionPane.ERROR_MESSAGE); 
+           return; 
+       }
 
-            // Check available seats for the chosen showtime
-            String checkSeatsSql = "SELECT available_seats FROM showtimes WHERE showtime_id = ? AND available_seats >= ?";
-            try {
-                PreparedStatement checkSeatsStmt = connection.prepareStatement(checkSeatsSql);
-                checkSeatsStmt.setInt(1, movieId); // Use the same ID for showtime
-                checkSeatsStmt.setInt(2, Integer.parseInt(seatsText));
-                ResultSet checkResult = checkSeatsStmt.executeQuery();
+       if (!fullName.matches("[a-zA-Z ]+")) { 
+           JOptionPane.showMessageDialog(dialog,"Full name should only contain letters and spaces.","Error",JOptionPane.ERROR_MESSAGE); 
+           return; 
+       }
 
-                if (!checkResult.next()) {
-                    JOptionPane.showMessageDialog(dialog, "Not enough available seats for this showtime. Please choose another one.", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
+       if (!phoneNumber.matches("[+0-9]+")) { 
+           JOptionPane.showMessageDialog(dialog,"Phone number should only contain digits and optional '+' sign.","Error",JOptionPane.ERROR_MESSAGE); 
+           return; 
+       }
 
-                // Proceed with booking
-                String insertBookingSql = "INSERT INTO bookings (movie_id, showtime_id, full_name, phone_number, seats_booked) " +
-                                          "VALUES (?, ?, ?, ?, ?)";
-                PreparedStatement insertBookingStmt = connection.prepareStatement(insertBookingSql);
-                insertBookingStmt.setInt(1, movieId);
-                insertBookingStmt.setInt(2, movieId); // Use the same ID for showtime
-                insertBookingStmt.setString(3, fullName);
-                insertBookingStmt.setString(4, phoneNumber);
-                insertBookingStmt.setInt(5, Integer.parseInt(seatsText));
-                insertBookingStmt.executeUpdate();
+       try { 
+           int movieId=Integer.parseInt(movieIdText); 
+           int showtimeId=Integer.parseInt(showtimeIdText); 
+           int seats=Integer.parseInt(seatsText); 
 
-                // Update available seats
-                String updateSeatsSql = "UPDATE showtimes SET available_seats = available_seats - ? WHERE showtime_id = ?";
-                PreparedStatement updateSeatsStmt = connection.prepareStatement(updateSeatsSql);
-                updateSeatsStmt.setInt(1, Integer.parseInt(seatsText));
-                updateSeatsStmt.setInt(2, movieId);
-                updateSeatsStmt.executeUpdate();
+           // Check if enough seats are available for the selected showtime
+           String checkSeatsSql="SELECT available_seats FROM Showtimes WHERE showtime_id=? AND available_seats>=?"; 
+           PreparedStatement checkSeatsStmt=connection.prepareStatement(checkSeatsSql); 
+           checkSeatsStmt.setInt(1,showtimeId); 
+           checkSeatsStmt.setInt(2,seats); 
 
-                JOptionPane.showMessageDialog(dialog, "Booking successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
+           ResultSet checkResultSet=checkSeatsStmt.executeQuery(); 
+           if (!checkResultSet.next()) { 
+               JOptionPane.showMessageDialog(dialog,"Not enough available seats for this showtime.","Error",JOptionPane.ERROR_MESSAGE); 
+               return; 
+           }
 
-            } catch (SQLException ex) {
-                JOptionPane.showMessageDialog(dialog, "Error processing booking: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        });
+          // Proceed with booking
+          String insertSql="INSERT INTO Bookings (movie_id, showtime_id, customer_name ,phone_number ,seats_booked) VALUES (?, ?, ?, ?, ?)"; 
+          PreparedStatement insertStmt=connection.prepareStatement(insertSql); 
+          insertStmt.setInt(1,movieId); 
+          insertStmt.setInt(2 ,showtimeId); 
+          insertStmt.setString(3 ,fullName); 
+          insertStmt.setString(4 ,phoneNumber); 
+          insertStmt.setInt(5 ,seats); 
 
-        cancelButton.addActionListener(e -> dialog.dispose());
+          insertStmt.executeUpdate(); 
 
-        dialog.setVisible(true);
-    }
-    
-    private static void resetBookingIds() throws SQLException {
-        // Reset the AUTO_INCREMENT to 1
-        String resetQuery = "ALTER TABLE bookings AUTO_INCREMENT = 1";
-        Statement stmt = connection.createStatement();
-        stmt.executeUpdate(resetQuery);
-        System.out.println("Booking IDs have been reset to 1.");
-    }
+          JOptionPane.showMessageDialog(dialog,"Booking added successfully!"); 
+          dialog.dispose(); 
 
-    private static void showCancelBookingDialog(JFrame parent) {
-        JDialog dialog = new JDialog(parent, "Cancel Booking", true);
-        dialog.setSize(300, 150);
-        dialog.setLayout(new GridLayout(3, 1, 5, 5));
+      } catch (NumberFormatException ex) { 
+          JOptionPane.showMessageDialog(dialog,"Movie ID and seats must be valid numbers.","Error",JOptionPane.ERROR_MESSAGE); 
+      } catch (SQLException ex) { 
+          JOptionPane.showMessageDialog(dialog,"Error adding booking: "+ ex.getMessage(),"Error",JOptionPane.ERROR_MESSAGE); 
+      } 
+   });
 
-        JLabel bookingIdLabel = new JLabel("Booking ID to Cancel:");
-        JTextField bookingIdField = new JTextField();
-        JButton cancelButton = new JButton("Cancel Booking");
+   cancelButton.addActionListener(e -> dialog.dispose());
+   dialog.setLocationRelativeTo(parent); // Center the dialog relative to parent
+   dialog.setVisible(true);
+}
 
-        dialog.add(bookingIdLabel);
-        dialog.add(bookingIdField);
-        dialog.add(cancelButton);
+// Method to update the Showtime ID based on selected Movie ID
+private static void updateShowtimeOptions(int movieId,JTextField showtimeIdField) { 
+   try { 
+      String queryShowtimes="SELECT showtime_id FROM Showtimes WHERE movie_id=?"; 
+      PreparedStatement pstmt=connection.prepareStatement(queryShowtimes); 
+      pstmt.setInt(1,movieId); 
 
-        cancelButton.addActionListener(e -> {
-            String bookingIdText = bookingIdField.getText().trim();
+      ResultSet rsShowtimes=pstmt.executeQuery(); 
 
-            if (bookingIdText.isEmpty()) {
-                JOptionPane.showMessageDialog(dialog, "Please enter a booking ID!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+      StringBuilder optionsBuilder=new StringBuilder(); 
 
-            try {
-                int bookingId = Integer.parseInt(bookingIdText);
+      while (rsShowtimes.next()) { 
+         int showtimeId=rsShowtimes.getInt("showtime_id"); 
+         optionsBuilder.append(showtimeId).append(", "); // Collecting all valid IDs
+      } 
 
-                // Retrieve the booking information
-                String selectBookingSql = "SELECT showtime_id, seats_booked FROM bookings WHERE booking_id = ?";
-                PreparedStatement selectBookingStmt = connection.prepareStatement(selectBookingSql);
-                selectBookingStmt.setInt(1, bookingId);
-                ResultSet bookingResult = selectBookingStmt.executeQuery();
+      if (optionsBuilder.length()>0) { 
+         optionsBuilder.setLength(optionsBuilder.length()-2); // Remove last comma and space
+         showtimeIdField.setText(optionsBuilder.toString()); // Display available Showtime IDs
+      } else { 
+         showtimeIdField.setText(""); // Clear if no showtimes found
+         JOptionPane.showMessageDialog(null,"No available showtimes for this Movie ID.","Info",JOptionPane.INFORMATION_MESSAGE);  
+      } 
 
-                if (!bookingResult.next()) {
-                    JOptionPane.showMessageDialog(dialog, "No booking found with the given ID!", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
+   } catch (SQLException e) { 
+      JOptionPane.showMessageDialog(null,"Error retrieving showtimes: "+ e.getMessage(),"Error",JOptionPane.ERROR_MESSAGE);  
+   }  
+}
 
-                int showtimeId = bookingResult.getInt("showtime_id");
-                int seatsBooked = bookingResult.getInt("seats_booked");
+private static void showBookingsDialog(JFrame parent) { 
+   JDialog dialog=new JDialog(parent,"Bookings",true); 
+   dialog.setSize(500,400);
 
-                // Delete the booking
-                String deleteBookingSql = "DELETE FROM bookings WHERE booking_id = ?";
-                PreparedStatement deleteBookingStmt = connection.prepareStatement(deleteBookingSql);
-                deleteBookingStmt.setInt(1, bookingId);
-                deleteBookingStmt.executeUpdate();
+   JTextArea bookingsArea=new JTextArea(); bookingsArea.setEditable(false);
 
-                // Update available seats
-                String updateSeatsSql = "UPDATE showtimes SET available_seats = available_seats + ? WHERE showtime_id = ?";
-                PreparedStatement updateSeatsStmt = connection.prepareStatement(updateSeatsSql);
-                updateSeatsStmt.setInt(1, seatsBooked);
-                updateSeatsStmt.setInt(2, showtimeId);
-                updateSeatsStmt.executeUpdate();
+   try { 
+      String sql="SELECT b.booking_id,b.customer_name,m.title,b.seats_booked FROM Bookings b JOIN Movies m ON b.movie_id=m.movie_id"; Statement statement=connection.createStatement(); ResultSet resultSet=statement.executeQuery(sql);
 
-                // Reset the booking IDs to 1
-                resetBookingIds();  // Reset booking IDs after cancellation
+      StringBuilder bookingsText=new StringBuilder(); while(resultSet.next()){ bookingsText.append(String.format("%d: %s booked %s (%d seats)\n",
+              resultSet.getInt("booking_id"),
+              resultSet.getString("customer_name"),
+              resultSet.getString("title"),
+              resultSet.getInt("seats_booked")));
+      }
+      bookingsArea.setText(bookingsText.toString());
+   } catch (SQLException e) {
+      bookingsArea.setText("Error retrieving bookings: "+ e.getMessage());
+   }
 
-                JOptionPane.showMessageDialog(dialog, "Booking cancelled successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-            } catch (SQLException | NumberFormatException ex) {
-                JOptionPane.showMessageDialog(dialog, "Error cancelling booking: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        });
+   dialog.add(new JScrollPane(bookingsArea));
+   dialog.setLocationRelativeTo(parent); // Center the dialog relative to parent
+   dialog.setVisible(true);
+}
 
-        dialog.setVisible(true);
-    }
+private static void showCancelBookingDialog(JFrame parent) {  
+   String bookingIdText=JOptionPane.showInputDialog(parent,"Enter Booking ID to cancel:");
+   if (bookingIdText != null && !bookingIdText.trim().isEmpty()) {  
+      try {  
+         int bookingId=Integer.parseInt(bookingIdText.trim());  
+         String sql="DELETE FROM Bookings WHERE booking_id=?";  
+         PreparedStatement statement=connection.prepareStatement(sql);  
+         statement.setInt(1,bookingId);
 
-
-    private static void showBookingsDialog(JFrame parent) {
-        JDialog dialog = new JDialog(parent, "View Bookings", true);
-        dialog.setSize(600, 400);  // Adjust size for better visibility
-        dialog.setLayout(new BorderLayout(10, 10));
-
-        // Define column names for the table
-        String[] columnNames = {"Booking ID", "Movie ID", "Showtime ID", "Name", "Seats"};
-
-        // Create an empty 2D Object array to hold the data for the table
-        Object[][] data = new Object[0][5]; // No data initially, will be populated later
-
-        // Create JTable with the columns and data
-        JTable table = new JTable(data, columnNames);
-        table.setFillsViewportHeight(true);  // Ensure the table fills the entire viewport
-
-        // Adjust column widths for better readability
-        table.getColumnModel().getColumn(0).setPreferredWidth(80);  // Booking ID
-        table.getColumnModel().getColumn(1).setPreferredWidth(100); // Movie ID
-        table.getColumnModel().getColumn(2).setPreferredWidth(100); // Showtime ID
-        table.getColumnModel().getColumn(3).setPreferredWidth(200); // Name
-        table.getColumnModel().getColumn(4).setPreferredWidth(80);  // Seats
-
-        // Create JScrollPane to make the table scrollable
-        JScrollPane scrollPane = new JScrollPane(table);
-        dialog.add(scrollPane, BorderLayout.CENTER);
-
-        // Fetch the current bookings from the database
-        try {
-            // Create a statement that supports scrollable result sets
-            Statement stmt = connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-
-            String query = "SELECT b.booking_id, b.movie_id, b.showtime_id, b.full_name, b.seats_booked " +
-                           "FROM bookings b " +
-                           "ORDER BY b.booking_id";  // Sorting by booking ID
-            ResultSet rs = stmt.executeQuery(query);
-
-            // Count how many rows to create dynamically
-            int rowCount = 0;
-            while (rs.next()) {
-                rowCount++;
-            }
-
-            // Create a new 2D array for data to store the fetched rows
-            Object[][] rows = new Object[rowCount][5];
-            int rowIndex = 0;
-            rs.beforeFirst(); // Reset the result set pointer to the beginning
-            while (rs.next()) {
-                int bookingId = rs.getInt("booking_id");
-                int movieId = rs.getInt("movie_id");
-                int showtimeId = rs.getInt("showtime_id");
-                String name = rs.getString("full_name");
-                int seatsBooked = rs.getInt("seats_booked");
-
-                // Manually populate the data into the 2D array
-                rows[rowIndex] = new Object[]{bookingId, movieId, showtimeId, name, seatsBooked};
-                rowIndex++;
-            }
-
-            // Create a new table with the populated data
-            JTable populatedTable = new JTable(rows, columnNames);
-            populatedTable.setFillsViewportHeight(true);  // Ensure the table fills the entire viewport
-
-            // Adjust column widths for better readability
-            populatedTable.getColumnModel().getColumn(0).setPreferredWidth(80);  // Booking ID
-            populatedTable.getColumnModel().getColumn(1).setPreferredWidth(100); // Movie ID
-            populatedTable.getColumnModel().getColumn(2).setPreferredWidth(100); // Showtime ID
-            populatedTable.getColumnModel().getColumn(3).setPreferredWidth(200); // Name
-            populatedTable.getColumnModel().getColumn(4).setPreferredWidth(80);  // Seats
-
-            // Set the newly populated table in the scroll pane
-            JScrollPane populatedScrollPane = new JScrollPane(populatedTable);
-            dialog.add(populatedScrollPane, BorderLayout.CENTER);
-
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(dialog, "Error retrieving bookings: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
-
-        // Add a close button to close the dialog
-        JPanel buttonPanel = new JPanel();
-        JButton closeButton = new JButton("Close");
-        buttonPanel.add(closeButton);
-        dialog.add(buttonPanel, BorderLayout.SOUTH);
-
-        closeButton.addActionListener(e -> dialog.dispose());
-
-        dialog.setVisible(true);
-    }
+         int rowsAffected=statement.executeUpdate();  
+         if(rowsAffected>0){  
+            JOptionPane.showMessageDialog(parent,"Booking cancelled successfully!");  
+         } else{  
+            JOptionPane.showMessageDialog(parent,"No booking found with ID: "+ bookingId,"Error",JOptionPane.ERROR_MESSAGE);  
+         }  
+      } catch(NumberFormatException ex){  
+         JOptionPane.showMessageDialog(parent,"Booking ID must be a number.","Error",JOptionPane.ERROR_MESSAGE);  
+      } catch(SQLException ex){  
+         JOptionPane.showMessageDialog(parent,"Error cancelling booking: "+ ex.getMessage(),"Error",JOptionPane.ERROR_MESSAGE);  
+      }  
+   } else{  
+      JOptionPane.showMessageDialog(parent,"Booking ID cannot be empty.","Error",JOptionPane.ERROR_MESSAGE);  
+   }  
+}
 }

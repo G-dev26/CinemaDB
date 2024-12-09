@@ -5,7 +5,7 @@ import java.sql.*;
 public class DatabaseConnection {
     private static final String URL = "jdbc:mysql://localhost:3306/CinemaDB";
     private static final String USER = "root";
-    private static final String PASSWORD = "newpassword";  // Update with the correct password
+    private static final String PASSWORD = "";  // Update with the correct password
 
     public static Connection getConnection() {
         try {
